@@ -9,7 +9,6 @@
 
 set -e
 
-######################################################################################
 #                                                                                    #
 # Project 'pterodactyl-installer'                                                    #
 #                                                                                    #
@@ -17,7 +16,6 @@ set -e
 #                                                                                    #                                            #
 # This script is not associated with the official Pterodactyl Project.               #
 #                                                                                    #
-######################################################################################
 
 export GITHUB_SOURCE="v1.1.1"
 export SCRIPT_RELEASE="v1.1.1"
