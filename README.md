@@ -1,3 +1,10 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>pterodactyl-installer script</title>
+</head>
+<body style="background:#fff; color:#000; font-family:monospace; white-space:pre; margin:20px;">
 #!/bin/bash
 
 set -e
@@ -96,3 +103,6 @@ done
 
 # Remove lib.sh, so next time the script is run the, newest version is downloaded.
 rm -rf /tmp/lib.sh
+</body>
+</html>
+
