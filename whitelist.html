@@ -79,17 +79,27 @@ function logout(){ localStorage.removeItem('user'); window.location.href='login.
 function openPopup(id){document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.add('active');}
 function closePopup(id){document.getElementById(id).classList.remove('active'); document.getElementById('overlay').classList.remove('active');}
 
+// WebSocket live whitelist
 let wsWhitelist = new WebSocket('wss://whitelist.underhost.org/ws/whitelist');
 wsWhitelist.onmessage = e=>{ document.getElementById('whitelist-list').innerText=e.data; }
 
+// Add player with validation
 async function addPlayer(){
     const discord=document.getElementById('add-discord').value.trim();
     const username=document.getElementById('add-username').value.trim();
     if(!username) return alert('Username required');
+
+    const res=await fetch(`https://whitelist.underhost.org/api/validate-username?username=${username}`);
+    const data=await res.json();
+    if(!data.valid){ alert('Invalid Minecraft username'); return; }
+
     const payload=discord?{discordId:discord,username}:{username};
-    await fetch('https://whitelist.underhost.org/api/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    await fetch('https://whitelist.underhost.org/api/add',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
     closePopup('add-popup');
 }
+
 async function removePlayer(){
     const discord=document.getElementById('remove-discord').value.trim();
     const username=document.getElementById('remove-username').value.trim();
@@ -97,7 +107,9 @@ async function removePlayer(){
     const payload={};
     if(discord) payload.discordId=discord;
     if(username) payload.username=username;
-    await fetch('https://whitelist.underhost.org/api/remove',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    await fetch('https://whitelist.underhost.org/api/remove',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+    });
     closePopup('remove-popup');
 }
 </script>
