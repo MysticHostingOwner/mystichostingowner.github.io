@@ -6,11 +6,11 @@
 <title>Whitelist - Strax Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#007BFF;--danger:#DC3545;--bg:#fff;--card:#f7f7f7;}
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}
-body{background:var(--bg);}
-header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;}
-header nav a{color:#fff;margin-left:1rem;text-decoration:none;font-weight:600;}
+:root{--primary:#007BFF;--success:#28a745;--danger:#dc3545;--bg:#f0f2f5;--card:#fff;--text:#000;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{background:var(--bg);color:var(--text);}
+header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;flex-wrap:wrap;}
+header nav a{color:#fff;margin:0 1rem;text-decoration:none;font-weight:600;}
 header nav a.active{text-decoration:underline;}
 .account{position:relative;}
 .account button{background:transparent;border:none;color:#fff;font-weight:600;cursor:pointer;}
@@ -18,18 +18,25 @@ header nav a.active{text-decoration:underline;}
 .dropdown a{display:block;padding:0.5rem 1rem;text-decoration:none;color:#000;}
 .dropdown a:hover{background:#f0f0f0;}
 .container{padding:2rem;max-width:1200px;margin:0 auto;}
-.card{background:var(--card);padding:1.5rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-button{padding:0.5rem 1rem;border:none;border-radius:6px;font-weight:600;cursor:pointer;}
-button.add{background:var(--primary);color:#fff;margin-bottom:1rem;}
-button.remove{background:var(--danger);color:#fff;margin-bottom:1rem;}
-.whitelist-list{height:400px;overflow-y:auto;background:#f0f0f0;padding:1rem;border-radius:6px;font-family:monospace;}
-.popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#fff;padding:2rem;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:transform 0.3s ease-in-out;z-index:1000;}
+.card{background:var(--card);padding:1.5rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);transition: box-shadow 0.3s, transform 0.3s;}
+.card:hover{transform: translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,0.2);}
+#whitelist-list{margin-top:1rem;}
+.popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.2);transition: transform 0.3s ease; z-index:1000;}
 .popup.active{transform:translate(-50%,-50%) scale(1);}
-.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;z-index:999;}
-.overlay.active{display:block;}
+#page-content{transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(0); opacity:1;}
+.slide-left{transform: translateX(-100%); opacity:0;}
+.slide-right{transform: translateX(100%); opacity:0;}
+.slide-in-left{transform: translateX(-100%); opacity:0;}
+.slide-in-right{transform: translateX(100%); opacity:0;}
+.slide-in-active{transform: translateX(0); opacity:1;}
+@media(max-width:768px){header{flex-direction:column;align-items:flex-start;} header nav{margin-top:0.5rem;}}
+button.add-btn{background:var(--primary);color:#fff;padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer;margin-bottom:1rem;}
+button.remove-btn{background:var(--danger);color:#fff;padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer;margin-bottom:1rem;}
+input{padding:0.5rem;border-radius:6px;border:1px solid #ccc;width:100%;margin-bottom:0.5rem;}
 </style>
 </head>
 <body>
+<div id="page-content">
 <header>
 <div>
 <nav>
@@ -48,70 +55,79 @@ button.remove{background:var(--danger);color:#fff;margin-bottom:1rem;}
 </header>
 
 <div class="container">
-<button class="add" onclick="openPopup('add-popup')">Add Player</button>
-<button class="remove" onclick="openPopup('remove-popup')">Remove Player</button>
-<div class="card whitelist-list" id="whitelist-list">Loading...</div>
-</div>
+<h1>Whitelist</h1>
+<button class="add-btn" onclick="showAddPopup()">Add Player</button>
+<button class="remove-btn" onclick="showRemovePopup()">Remove Player</button>
 
-<div class="overlay" id="overlay"></div>
+<div id="whitelist-list" class="card">Loading whitelist...</div>
+</div>
 
 <div class="popup" id="add-popup">
 <h3>Add Player</h3>
-<input type="text" id="add-discord" placeholder="Discord ID (optional)">
 <input type="text" id="add-username" placeholder="Minecraft Username">
-<button class="add" onclick="addPlayer()">Add</button>
-<button onclick="closePopup('add-popup')">Close</button>
+<input type="text" id="add-discord" placeholder="Discord ID (optional)">
+<button onclick="addPlayer()">Add</button>
+<button onclick="hideAddPopup()">Close</button>
 </div>
 
 <div class="popup" id="remove-popup">
 <h3>Remove Player</h3>
-<input type="text" id="remove-discord" placeholder="Discord ID (optional)">
 <input type="text" id="remove-username" placeholder="Minecraft Username">
-<button class="remove" onclick="removePlayer()">Remove</button>
-<button onclick="closePopup('remove-popup')">Close</button>
+<input type="text" id="remove-discord" placeholder="Discord ID (optional)">
+<button onclick="removePlayer()">Remove</button>
+<button onclick="hideRemovePopup()">Close</button>
 </div>
 
 <script>
 if(localStorage.getItem('user')!=='Shadow') window.location.href='login.html';
-function toggleDropdown(){ document.getElementById('account-dropdown').style.display=document.getElementById('account-dropdown').style.display==='block'?'none':'block'; }
-function changePassword(){ alert('Change password not implemented'); }
-function logout(){ localStorage.removeItem('user'); window.location.href='login.html';}
-function openPopup(id){document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.add('active');}
-function closePopup(id){document.getElementById(id).classList.remove('active'); document.getElementById('overlay').classList.remove('active');}
-
-// WebSocket live whitelist
-let wsWhitelist = new WebSocket('wss://whitelist.underhost.org/ws/whitelist');
-wsWhitelist.onmessage = e=>{ document.getElementById('whitelist-list').innerText=e.data; }
-
-// Add player with validation
-async function addPlayer(){
-    const discord=document.getElementById('add-discord').value.trim();
-    const username=document.getElementById('add-username').value.trim();
-    if(!username) return alert('Username required');
-
-    const res=await fetch(`https://whitelist.underhost.org/api/validate-username?username=${username}`);
-    const data=await res.json();
-    if(!data.valid){ alert('Invalid Minecraft username'); return; }
-
-    const payload=discord?{discordId:discord,username}:{username};
-    await fetch('https://whitelist.underhost.org/api/add',{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
-    });
-    closePopup('add-popup');
+function toggleDropdown(){const d=document.getElementById('account-dropdown');d.style.display=d.style.display==='block'?'none':'block';}
+function changePassword(){alert('Change password not implemented');}
+function logout(){
+    const page=document.getElementById('page-content');
+    page.classList.add('slide-down');
+    page.addEventListener('transitionend',()=>{localStorage.removeItem('user'); window.location.href='login.html';},{once:true});
 }
 
-async function removePlayer(){
-    const discord=document.getElementById('remove-discord').value.trim();
-    const username=document.getElementById('remove-username').value.trim();
-    if(!discord && !username) return alert('Provide Discord ID or username');
-    const payload={};
-    if(discord) payload.discordId=discord;
-    if(username) payload.username=username;
-    await fetch('https://whitelist.underhost.org/api/remove',{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+// Navigation slide
+const order=['home.html','whitelist.html','console.html'];
+document.querySelectorAll('header nav a').forEach(link=>{
+    link.addEventListener('click', function(e){
+        e.preventDefault();
+        const target=this.getAttribute('href');
+        const current=window.location.pathname.split('/').pop();
+        const page=document.getElementById('page-content');
+        page.classList.add(order.indexOf(target)>order.indexOf(current)?'slide-left':'slide-right');
+        page.addEventListener('transitionend',()=>{window.location.href=target;},{once:true});
     });
-    closePopup('remove-popup');
-}
+});
+
+// Slide in on load
+window.addEventListener('load',()=>{
+    const page=document.getElementById('page-content');
+    page.classList.add('slide-in-right');
+    requestAnimationFrame(()=>page.classList.add('slide-in-active'));
+});
+
+// WebSocket to fetch whitelist
+const ws=new WebSocket('wss://whitelist.underhost.org/ws/whitelist');
+ws.onmessage=e=>{
+    const data=JSON.parse(e.data);
+    const listEl=document.getElementById('whitelist-list');
+    listEl.innerHTML='';
+    data.forEach(p=>{
+        const div=document.createElement('div'); div.className='card'; div.innerText=`${p.mcUsername} - ${p.discordId||'No Discord'}`; listEl.appendChild(div);
+    });
+};
+
+// Popups
+function showAddPopup(){document.getElementById('add-popup').classList.add('active');}
+function hideAddPopup(){document.getElementById('add-popup').classList.remove('active');}
+function showRemovePopup(){document.getElementById('remove-popup').classList.add('active');}
+function hideRemovePopup(){document.getElementById('remove-popup').classList.remove('active');}
+
+// Mock add/remove functions (replace with API calls)
+function addPlayer(){ alert('Player added (mock)'); hideAddPopup();}
+function removePlayer(){ alert('Player removed (mock)'); hideRemovePopup();}
 </script>
 </body>
 </html>

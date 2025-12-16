@@ -6,14 +6,7 @@
 <title>Home - Strax Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root {
-    --primary: #007BFF;
-    --success: #28a745;
-    --danger: #dc3545;
-    --bg: #ffffff;
-    --card: #f7f7f7;
-    --text: #000;
-}
+:root{--primary:#007BFF;--success:#28a745;--danger:#dc3545;--bg:#f0f2f5;--card:#fff;--text:#000;}
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
 body{background:var(--bg);color:var(--text);}
 header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;flex-wrap:wrap;}
@@ -25,15 +18,25 @@ header nav a.active{text-decoration:underline;}
 .dropdown a{display:block;padding:0.5rem 1rem;text-decoration:none;color:#000;}
 .dropdown a:hover{background:#f0f0f0;}
 .container{padding:2rem;max-width:1200px;margin:0 auto;}
-.card{background:var(--card);padding:1.5rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.card{background:var(--card);padding:1.5rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);transition: box-shadow 0.3s, transform 0.3s;}
+.card:hover{transform: translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,0.2);}
 .status{display:flex;align-items:center;margin-bottom:1rem;font-size:1.1rem;}
 .status span{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:0.5rem;}
 .status.online span{background:var(--success);}
 .status.offline span{background:var(--danger);}
+#page-content{transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(0); opacity:1;}
+.slide-left{transform: translateX(-100%); opacity:0;}
+.slide-right{transform: translateX(100%); opacity:0;}
+.slide-in-left{transform: translateX(-100%); opacity:0;}
+.slide-in-right{transform: translateX(100%); opacity:0;}
+.slide-in-active{transform: translateX(0); opacity:1;}
+.slide-down{transform: translateY(-100%); opacity:0;}
+.slide-up{transform: translateY(100%); opacity:0;}
 @media(max-width:768px){header{flex-direction:column;align-items:flex-start;} header nav{margin-top:0.5rem;}}
 </style>
 </head>
 <body>
+<div id="page-content">
 <header>
 <div>
 <nav>
@@ -58,17 +61,46 @@ header nav a.active{text-decoration:underline;}
 <div>Whitelisted players: <span id="whitelist-count">0</span></div>
 </div>
 </div>
+</div>
 
 <script>
 if(localStorage.getItem('user')!=='Shadow') window.location.href='login.html';
-function toggleDropdown(){ 
-    const d=document.getElementById('account-dropdown'); 
-    d.style.display=d.style.display==='block'?'none':'block'; 
+function toggleDropdown(){const d=document.getElementById('account-dropdown');d.style.display=d.style.display==='block'?'none':'block';}
+function changePassword(){alert('Change password not implemented');}
+function logout(){
+    const page=document.getElementById('page-content');
+    page.classList.add('slide-down');
+    page.addEventListener('transitionend',()=>{localStorage.removeItem('user'); window.location.href='login.html';},{once:true});
 }
-function changePassword(){ alert('Change password not implemented'); }
-function logout(){ localStorage.removeItem('user'); window.location.href='login.html';}
 
-// WebSocket for live server status
+const order=['home.html','whitelist.html','console.html'];
+document.querySelectorAll('header nav a').forEach(link=>{
+    link.addEventListener('click',function(e){
+        e.preventDefault();
+        const target=this.getAttribute('href');
+        const current=window.location.pathname.split('/').pop();
+        const page=document.getElementById('page-content');
+        const currentIndex=order.indexOf(current);
+        const targetIndex=order.indexOf(target);
+        page.classList.add(targetIndex>currentIndex?'slide-left':'slide-right');
+        page.addEventListener('transitionend',function handler(){ window.location.href=target; page.removeEventListener('transitionend',handler); });
+    });
+});
+
+window.addEventListener('load',()=>{
+    const page=document.getElementById('page-content');
+    const ref= document.referrer.split('/').pop();
+    const current=window.location.pathname.split('/').pop();
+    const order=['home.html','whitelist.html','console.html'];
+    const refIndex=order.indexOf(ref);
+    const currentIndex=order.indexOf(current);
+    if(refIndex<currentIndex) page.classList.add('slide-in-right');
+    else if(refIndex>currentIndex) page.classList.add('slide-in-left');
+    else page.classList.add('slide-in-active');
+    requestAnimationFrame(()=>page.classList.add('slide-in-active'));
+});
+
+// WebSocket for server status
 const wsStatus=new WebSocket('wss://whitelist.underhost.org/ws/status');
 wsStatus.onmessage=e=>{
     const data=JSON.parse(e.data);
@@ -77,16 +109,6 @@ wsStatus.onmessage=e=>{
     el.innerHTML=`<span></span>Server ${data.online?'Online':'Offline'}`;
     document.getElementById('whitelist-count').innerText=data.whitelistCount;
 };
-
-// Fallback ping
-setInterval(()=>{
-    fetch('https://whitelist.underhost.org/api/ping').then(r=>r.json()).then(data=>{
-        const el=document.getElementById('server-status');
-        el.className='status '+(data.online?'online':'offline');
-        el.innerHTML=`<span></span>Server ${data.online?'Online':'Offline'}`;
-        document.getElementById('whitelist-count').innerText=data.whitelistCount;
-    }).catch(()=>{});
-},10000);
 </script>
 </body>
 </html>

@@ -6,11 +6,11 @@
 <title>Console - Strax Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root{--primary:#007BFF;--bg:#fff;--card:#f7f7f7;}
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Inter',sans-serif;}
-body{background:var(--bg);}
-header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;}
-header nav a{color:#fff;margin-left:1rem;text-decoration:none;font-weight:600;}
+:root{--primary:#007BFF;--bg:#f0f2f5;--card:#fff;--text:#000;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
+body{background:var(--bg);color:var(--text);}
+header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;flex-wrap:wrap;}
+header nav a{color:#fff;margin:0 1rem;text-decoration:none;font-weight:600;}
 header nav a.active{text-decoration:underline;}
 .account{position:relative;}
 .account button{background:transparent;border:none;color:#fff;font-weight:600;cursor:pointer;}
@@ -18,12 +18,23 @@ header nav a.active{text-decoration:underline;}
 .dropdown a{display:block;padding:0.5rem 1rem;text-decoration:none;color:#000;}
 .dropdown a:hover{background:#f0f0f0;}
 .container{padding:2rem;max-width:1200px;margin:0 auto;}
-#console-log{height:400px;overflow-y:auto;font-family:monospace;background:#f0f0f0;padding:1rem;border-radius:6px;}
-#console-input{width:calc(100% - 100px);padding:0.5rem;border-radius:6px;border:1px solid #ccc;margin-right:0.5rem;}
-#console-send{width:90px;background:var(--primary);color:#fff;border-radius:6px;border:none;cursor:pointer;}
+.card{background:var(--card);padding:1rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);overflow:auto; max-height:500px;}
+#console-log{white-space:pre-wrap; font-family: monospace; font-size:14px;}
+input#console-input{width:100%;padding:0.5rem;margin-top:0.5rem;border-radius:6px;border:1px solid #ccc;box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);}
+#page-content{transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(0); opacity:1;}
+.slide-left{transform: translateX(-100%); opacity:0;}
+.slide-right{transform: translateX(100%); opacity:0;}
+.slide-in-left{transform: translateX(-100%); opacity:0;}
+.slide-in-right{transform: translateX(100%); opacity:0;}
+.slide-in-active{transform: translateX(0); opacity:1;}
+.slide-down{transform: translateY(-100%); opacity:0;}
+.slide-up{transform: translateY(100%); opacity:0;}
+@media(max-width:768px){header{flex-direction:column;align-items:flex-start;} header nav{margin-top:0.5rem;}}
+button.send-btn{background:var(--primary);color:#fff;padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer;margin-top:0.5rem;}
 </style>
 </head>
 <body>
+<div id="page-content">
 <header>
 <div>
 <nav>
@@ -42,33 +53,66 @@ header nav a.active{text-decoration:underline;}
 </header>
 
 <div class="container">
-<div id="console-log">Connecting to server...</div>
-<div style="display:flex;margin-top:1rem;">
-<input type="text" id="console-input" placeholder="Enter command...">
-<button id="console-send">Send</button>
+<h1>Console</h1>
+<div class="card" id="console-log">Connecting to server...</div>
+<input type="text" id="console-input" placeholder="Type command and press Enter" onkeydown="if(event.key==='Enter'){sendCommand();}">
+<button class="send-btn" onclick="sendCommand()">Send</button>
 </div>
 </div>
 
 <script>
 if(localStorage.getItem('user')!=='Shadow') window.location.href='login.html';
-function toggleDropdown(){ document.getElementById('account-dropdown').style.display=document.getElementById('account-dropdown').style.display==='block'?'none':'block'; }
-function changePassword(){ alert('Change password not implemented'); }
-function logout(){ localStorage.removeItem('user'); window.location.href='login.html';}
+function toggleDropdown(){const d=document.getElementById('account-dropdown');d.style.display=d.style.display==='block'?'none':'block';}
+function changePassword(){alert('Change password not implemented');}
+function logout(){
+    const page=document.getElementById('page-content');
+    page.classList.add('slide-down');
+    page.addEventListener('transitionend',()=>{localStorage.removeItem('user'); window.location.href='login.html';},{once:true});
+}
 
-const consoleLog=document.getElementById('console-log');
+// Navigation slide
+const order=['home.html','whitelist.html','console.html'];
+document.querySelectorAll('header nav a').forEach(link=>{
+    link.addEventListener('click', function(e){
+        e.preventDefault();
+        const target=this.getAttribute('href');
+        const current=window.location.pathname.split('/').pop();
+        const page=document.getElementById('page-content');
+        page.classList.add(order.indexOf(target)>order.indexOf(current)?'slide-left':'slide-right');
+        page.addEventListener('transitionend',()=>{window.location.href=target;},{once:true});
+    });
+});
+
+// Slide-in on load
+window.addEventListener('load',()=>{
+    const page=document.getElementById('page-content');
+    const ref= document.referrer.split('/').pop();
+    const current=window.location.pathname.split('/').pop();
+    const refIndex=order.indexOf(ref);
+    const currentIndex=order.indexOf(current);
+    if(refIndex<currentIndex) page.classList.add('slide-in-right');
+    else if(refIndex>currentIndex) page.classList.add('slide-in-left');
+    else page.classList.add('slide-in-active');
+    requestAnimationFrame(()=>page.classList.add('slide-in-active'));
+});
+
+// WebSocket live console
 const wsConsole=new WebSocket('wss://whitelist.underhost.org/ws/console');
+const consoleLog=document.getElementById('console-log');
 wsConsole.onmessage=e=>{
-    consoleLog.innerText+=e.data+'\n';
+    const msg=JSON.parse(e.data).message;
+    consoleLog.innerText+=msg+'\n';
     consoleLog.scrollTop=consoleLog.scrollHeight;
 };
 
-document.getElementById('console-send').addEventListener('click',sendConsole);
-document.getElementById('console-input').addEventListener('keydown',e=>{if(e.key==='Enter') sendConsole();});
-function sendConsole(){
-    const cmd=document.getElementById('console-input').value.trim();
-    if(!cmd) return;
-    wsConsole.send(cmd);
-    document.getElementById('console-input').value='';
+// Send command
+function sendCommand(){
+    const input=document.getElementById('console-input');
+    const cmd=input.value.trim();
+    if(cmd && wsConsole.readyState===WebSocket.OPEN){
+        wsConsole.send(JSON.stringify({command:cmd}));
+        input.value='';
+    }
 }
 </script>
 </body>
