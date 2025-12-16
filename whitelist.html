@@ -4,36 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Whitelist - Strax Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-<style>
-:root{--primary:#007BFF;--success:#28a745;--danger:#dc3545;--bg:#f0f2f5;--card:#fff;--text:#000;}
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif;}
-body{background:var(--bg);color:var(--text);}
-header{background:var(--primary);color:#fff;display:flex;justify-content:space-between;align-items:center;padding:1rem 2rem;flex-wrap:wrap;}
-header nav a{color:#fff;margin:0 1rem;text-decoration:none;font-weight:600;}
-header nav a.active{text-decoration:underline;}
-.account{position:relative;}
-.account button{background:transparent;border:none;color:#fff;font-weight:600;cursor:pointer;}
-.dropdown{position:absolute;top:2.5rem;right:0;background:#fff;color:#000;border-radius:6px;display:none;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
-.dropdown a{display:block;padding:0.5rem 1rem;text-decoration:none;color:#000;}
-.dropdown a:hover{background:#f0f0f0;}
-.container{padding:2rem;max-width:1200px;margin:0 auto;}
-.card{background:var(--card);padding:1.5rem;border-radius:10px;margin-bottom:1rem;box-shadow:0 8px 24px rgba(0,0,0,0.15);transition: box-shadow 0.3s, transform 0.3s;}
-.card:hover{transform: translateY(-3px);box-shadow:0 12px 36px rgba(0,0,0,0.2);}
-#whitelist-list{margin-top:1rem;}
-.popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);background:#fff;padding:1.5rem;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.2);transition: transform 0.3s ease; z-index:1000;}
-.popup.active{transform:translate(-50%,-50%) scale(1);}
-#page-content{transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(0); opacity:1;}
-.slide-left{transform: translateX(-100%); opacity:0;}
-.slide-right{transform: translateX(100%); opacity:0;}
-.slide-in-left{transform: translateX(-100%); opacity:0;}
-.slide-in-right{transform: translateX(100%); opacity:0;}
-.slide-in-active{transform: translateX(0); opacity:1;}
-@media(max-width:768px){header{flex-direction:column;align-items:flex-start;} header nav{margin-top:0.5rem;}}
-button.add-btn{background:var(--primary);color:#fff;padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer;margin-bottom:1rem;}
-button.remove-btn{background:var(--danger);color:#fff;padding:0.5rem 1rem;border:none;border-radius:8px;cursor:pointer;margin-bottom:1rem;}
-input{padding:0.5rem;border-radius:6px;border:1px solid #ccc;width:100%;margin-bottom:0.5rem;}
-</style>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div id="page-content">
@@ -62,6 +33,7 @@ input{padding:0.5rem;border-radius:6px;border:1px solid #ccc;width:100%;margin-b
 <div id="whitelist-list" class="card">Loading whitelist...</div>
 </div>
 
+<!-- Add Popup -->
 <div class="popup" id="add-popup">
 <h3>Add Player</h3>
 <input type="text" id="add-username" placeholder="Minecraft Username">
@@ -70,6 +42,7 @@ input{padding:0.5rem;border-radius:6px;border:1px solid #ccc;width:100%;margin-b
 <button onclick="hideAddPopup()">Close</button>
 </div>
 
+<!-- Remove Popup -->
 <div class="popup" id="remove-popup">
 <h3>Remove Player</h3>
 <input type="text" id="remove-username" placeholder="Minecraft Username">
@@ -78,36 +51,8 @@ input{padding:0.5rem;border-radius:6px;border:1px solid #ccc;width:100%;margin-b
 <button onclick="hideRemovePopup()">Close</button>
 </div>
 
+<script src="js/main.js"></script>
 <script>
-if(localStorage.getItem('user')!=='Shadow') window.location.href='login.html';
-function toggleDropdown(){const d=document.getElementById('account-dropdown');d.style.display=d.style.display==='block'?'none':'block';}
-function changePassword(){alert('Change password not implemented');}
-function logout(){
-    const page=document.getElementById('page-content');
-    page.classList.add('slide-down');
-    page.addEventListener('transitionend',()=>{localStorage.removeItem('user'); window.location.href='login.html';},{once:true});
-}
-
-// Navigation slide
-const order=['home.html','whitelist.html','console.html'];
-document.querySelectorAll('header nav a').forEach(link=>{
-    link.addEventListener('click', function(e){
-        e.preventDefault();
-        const target=this.getAttribute('href');
-        const current=window.location.pathname.split('/').pop();
-        const page=document.getElementById('page-content');
-        page.classList.add(order.indexOf(target)>order.indexOf(current)?'slide-left':'slide-right');
-        page.addEventListener('transitionend',()=>{window.location.href=target;},{once:true});
-    });
-});
-
-// Slide in on load
-window.addEventListener('load',()=>{
-    const page=document.getElementById('page-content');
-    page.classList.add('slide-in-right');
-    requestAnimationFrame(()=>page.classList.add('slide-in-active'));
-});
-
 // WebSocket to fetch whitelist
 const ws=new WebSocket('wss://whitelist.underhost.org/ws/whitelist');
 ws.onmessage=e=>{
@@ -115,7 +60,10 @@ ws.onmessage=e=>{
     const listEl=document.getElementById('whitelist-list');
     listEl.innerHTML='';
     data.forEach(p=>{
-        const div=document.createElement('div'); div.className='card'; div.innerText=`${p.mcUsername} - ${p.discordId||'No Discord'}`; listEl.appendChild(div);
+        const div=document.createElement('div'); 
+        div.className='card'; 
+        div.innerText=`${p.mcUsername} - ${p.discordId||'No Discord'}`;
+        listEl.appendChild(div);
     });
 };
 
@@ -125,7 +73,7 @@ function hideAddPopup(){document.getElementById('add-popup').classList.remove('a
 function showRemovePopup(){document.getElementById('remove-popup').classList.add('active');}
 function hideRemovePopup(){document.getElementById('remove-popup').classList.remove('active');}
 
-// Mock add/remove functions (replace with API calls)
+// Mock add/remove (replace with API calls)
 function addPlayer(){ alert('Player added (mock)'); hideAddPopup();}
 function removePlayer(){ alert('Player removed (mock)'); hideRemovePopup();}
 </script>
