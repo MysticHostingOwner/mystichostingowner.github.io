@@ -1,1 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Strax Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body{display:flex;justify-content:center;align-items:center;height:100vh;background:#f0f2f5;}
+.login-container{background:#fff;padding:2rem;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:300px;text-align:center;}
+.login-container input{width:100%;padding:0.5rem;margin:0.5rem 0;border-radius:6px;border:1px solid #ccc;}
+.login-container button{width:100%;padding:0.5rem;margin-top:0.5rem;background:#007BFF;color:#fff;border:none;border-radius:6px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="login-container" id="login-container">
+<h1>Strax Dashboard</h1>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>
 
+<script src="js/main.js"></script>
+<script>
+function login() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    if (user === 'Shadow' && pass === 'strax') {
+        // Set temporary session
+        sessionStorage.setItem('user', 'Shadow');
+        const container = document.getElementById('login-container');
+        container.classList.add('slide-up');
+        container.addEventListener('transitionend', () => {
+            window.location.href = 'home.html';
+        }, { once: true });
+    } else alert('Invalid credentials');
+}
+</script>
+</body>
+</html>
