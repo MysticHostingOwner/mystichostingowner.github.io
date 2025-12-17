@@ -1,49 +1,52 @@
-// Authentication redirect using sessionStorage
-if (!window.location.href.includes('login.html')) {
-    if (sessionStorage.getItem('user') !== 'Shadow') {
-        window.location.href = 'login.html';
-    }
-}
+/* =========================
+   SESSION AUTH (LOOP SAFE)
+========================= */
 
-// Dropdown
+(function () {
+    const path = window.location.pathname;
+    const page = path.substring(path.lastIndexOf('/') + 1) || 'index.html';
+
+    const loggedIn = sessionStorage.getItem('user') === 'Shadow';
+
+    // LOGIN PAGE
+    if (page === 'login.html') {
+        if (loggedIn) {
+            window.location.replace('home.html');
+        }
+        return; // STOP EXECUTION
+    }
+
+    // INDEX PAGE (redirect to login)
+    if (page === 'index.html' || page === '') {
+        window.location.replace('login.html');
+        return;
+    }
+
+    // ALL PROTECTED PAGES
+    if (!loggedIn) {
+        window.location.replace('login.html');
+        return;
+    }
+})();
+
+/* =========================
+   ACCOUNT DROPDOWN
+========================= */
+
 function toggleDropdown() {
     const d = document.getElementById('account-dropdown');
-    d.style.display = d.style.display === 'block' ? 'none' : 'block';
+    if (d) d.style.display = d.style.display === 'block' ? 'none' : 'block';
 }
-function changePassword() {
-    alert('Change password not implemented');
-}
+
 function logout() {
-    const page = document.getElementById('page-content');
-    page.classList.add('slide-down');
-    page.addEventListener('transitionend', () => {
-        sessionStorage.removeItem('user');
-        window.location.href = 'login.html';
-    }, { once: true });
+    sessionStorage.clear();
+    window.location.replace('login.html');
 }
 
-// Navigation slide
-const order = ['home.html', 'whitelist.html', 'console.html'];
-document.querySelectorAll('header nav a').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = this.getAttribute('href');
-        const current = window.location.pathname.split('/').pop();
-        const page = document.getElementById('page-content');
-        page.classList.add(order.indexOf(target) > order.indexOf(current) ? 'slide-left' : 'slide-right');
-        page.addEventListener('transitionend', () => { window.location.href = target; }, { once: true });
-    });
-});
+/* =========================
+   NAVIGATION (NO REDIRECTS)
+========================= */
 
-// Slide in effect on page load
-window.addEventListener('load', () => {
-    const page = document.getElementById('page-content');
-    const ref = document.referrer.split('/').pop();
-    const current = window.location.pathname.split('/').pop();
-    const refIndex = order.indexOf(ref);
-    const currentIndex = order.indexOf(current);
-    if (refIndex < currentIndex) page.classList.add('slide-in-right');
-    else if (refIndex > currentIndex) page.classList.add('slide-in-left');
-    else page.classList.add('slide-in-active');
-    requestAnimationFrame(() => page.classList.add('slide-in-active'));
-});
+function go(page) {
+    window.location.href = page;
+}
