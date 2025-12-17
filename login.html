@@ -23,17 +23,15 @@ body{display:flex;justify-content:center;align-items:center;height:100vh;backgro
 <script src="js/main.js"></script>
 <script>
 function login() {
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
-    if (user === 'Shadow' && pass === 'strax') {
-        // Set temporary session
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+
+    if (u === 'Shadow' && p === 'strax') {
         sessionStorage.setItem('user', 'Shadow');
-        const container = document.getElementById('login-container');
-        container.classList.add('slide-up');
-        container.addEventListener('transitionend', () => {
-            window.location.href = 'home.html';
-        }, { once: true });
-    } else alert('Invalid credentials');
+        window.location.replace('home.html');
+    } else {
+        alert('Invalid credentials');
+    }
 }
 </script>
 </body>
